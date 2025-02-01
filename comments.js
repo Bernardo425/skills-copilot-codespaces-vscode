@@ -1,27 +1,46 @@
-// create a webserver with express
+// Create web server
+
 const express = require('express');
+const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 const bodyParser = require('body-parser');
-const app = express();
-const port = 3000;
+const cors = require('cors');
 
-// we need to parse the body of the request
-app.use(bodyParser.json());
+router.use(cors());
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: false }));
 
-// store the comments in memory
-const comments = [];
-
-// create a new comment
-app.post('/comments', (req, res) => {
-  const newComment = req.body;
-  comments.push(newComment);
-  res.json(newComment);
+router.get('/', (req, res) => {
+    res.json({ message: 'Comments' });
 });
 
-// read all the comments
-app.get('/comments', (req, res) => {
-  res.json(comments);
+router.get('/comments', (req, res) => {
+    fs.readFile(path.join(__dirname, 'comments.json'), 'utf8', (err, data) => {
+        if (err) {
+            res.json({ message: 'Error' });
+        } else {
+            res.json(JSON.parse(data));
+        }
+    });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+router.post('/comments', (req, res) => {
+    fs.readFile(path.join(__dirname, 'comments.json'), 'utf8', (err, data) => {
+        if (err) {
+            res.json({ message: 'Error' });
+        } else {
+            const comments = JSON.parse(data);
+            comments.push(req.body);
+            fs.writeFile(path.join(__dirname, 'comments.json'), JSON.stringify(comments), 'utf8', (err) => {
+                if (err) {
+                    res.json({ message: 'Error' });
+                } else {
+                    res.json({ message: 'Success' });
+                }
+            });
+        }
+    });
 });
+
+module.exports = router;
